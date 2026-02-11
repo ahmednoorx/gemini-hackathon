@@ -1,0 +1,14 @@
+[server]
+address = "0.0.0.0"
+headless = true
+maxUploadSize = 1024
+maxMessageSize = 1024
+enableXsrfProtection = false
+enableCORS = false
+
+[browser]
+serverAddress = "127.0.0.1"
+gatherUsageStats = false
+
+[logger]
+level = "error"

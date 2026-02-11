@@ -1,0 +1,16 @@
+[server]
+# Codespaces & local dev configuration
+maxUploadSize = 200
+headless = true
+runOnSave = true
+fileWatcherType = "poll"
+enableCORS = false
+enableXsrfProtection = false
+allowRunOnSave = true
+
+[logger]
+level = "error"
+
+[client]
+# Increase timeout for slow backends
+showErrorDetails = true

@@ -1,0 +1,94 @@
+# Sample Audit Report
+
+This is what a successful audit output looks like.
+
+```json
+{
+  "status": "success",
+  "message": "Audit completed in 42.3s",
+  "audit_report": {
+    "claims": [
+      {
+        "text": "The experimental group showed a 25% improvement over the control group",
+        "confidence": 0.92,
+        "page": 4,
+        "evidence_type": "quantitative"
+      },
+      {
+        "text": "Results indicated a statistically significant increase in enzyme activity",
+        "confidence": 0.88,
+        "page": 5,
+        "evidence_type": "statistical"
+      },
+      {
+        "text": "Figure 2 demonstrates that temperature increases with time",
+        "confidence": 0.95,
+        "page": 6,
+        "evidence_type": "comparative"
+      }
+    ],
+    "contradictions": [
+      {
+        "claim": "The experimental group showed a 25% improvement over the control group",
+        "visual_evidence_page": 4,
+        "visual_shows": "Figure 1 bar chart shows only 12% difference between experimental and control groups",
+        "contradiction_type": "direct_conflict",
+        "confidence": 0.88,
+        "reasoning": "Text claims 25% but the corresponding figure clearly shows approximately 12% improvement."
+      },
+      {
+        "claim": "Figure 2 demonstrates that temperature increases with time",
+        "visual_evidence_page": 6,
+        "visual_shows": "Figure 2 line graph shows temperature decreasing from 45°C to 35°C over the 10-minute period",
+        "contradiction_type": "direct_conflict",
+        "confidence": 0.91,
+        "reasoning": "Text description conflicts directly with the trend shown in the graph. Temperature clearly decreases, not increases."
+      }
+    ],
+    "audit_summary": "Analyzed 3 claims across 8 pages. Detected 2 contradictions. Both are high-confidence direct conflicts between text statements and visual evidence.",
+    "total_pages": 8,
+    "processing_time_seconds": 42.3,
+    "gemini_reasoning_trace": null
+  }
+}
+```
+
+---
+
+## Interpretation
+
+### Claims Extracted
+3 significant claims were identified:
+- Claim about 25% improvement (92% confidence)
+- Claim about enzyme activity increase (88% confidence)
+- Claim about temperature increasing (95% confidence)
+
+### Contradictions Found
+2 major contradictions detected:
+
+**1. Improvement Percentage Mismatch**
+- Text says: 25% improvement
+- Figure shows: 12% improvement
+- Confidence: 88% (very high)
+- Type: Direct conflict
+
+**2. Temperature Trend Reversal**
+- Text says: Temperature increases over time
+- Figure shows: Temperature decreases from 45°C to 35°C
+- Confidence: 91% (very high)
+- Type: Direct conflict
+
+### Audit Summary
+The summary provides a human-readable overview: 3 claims analyzed, 2 contradictions found, both high-confidence.
+
+---
+
+## Usage in Demo
+
+This output would be displayed in the Streamlit UI showing:
+1. List of all extracted claims with confidence badges
+2. Highlighted contradictions with expandable details
+3. Direct links to the pages where contradictions occur
+4. A downloadable JSON file for further analysis
+
+This demo output showcases how judges will see the contradictions clearly flagged and contextualized.
