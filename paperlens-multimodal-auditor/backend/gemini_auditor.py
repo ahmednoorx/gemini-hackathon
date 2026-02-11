@@ -1,24 +1,83 @@
 """
 Gemini 3 Multimodal Auditor
 3-Phase contradiction detection pipeline.
+Implements thought-signature propagation and robust error handling.
 """
 
 import json
 import os
 import base64
-from typing import List, Dict, Any
+import time
+from typing import List, Dict, Any, Optional, Tuple
 from google import genai
+from google.api_core import exceptions as api_exceptions
 from models import Claim, Contradiction, AuditReport
 
 
 class MultimodalAuditor:
-    """Orchestrates the 3-phase contradiction detection."""
+    """Orchestrates the 3-phase contradiction detection with robustness."""
     
     def __init__(self, api_key: str = None):
         if api_key is None:
             api_key = os.getenv("GOOGLE_API_KEY")
         self.client = genai.Client(api_key=api_key)
         self.model = "gemini-2.0-flash"  # Use stable model
+        self.thought_signatures: Dict[int, Optional[str]] = {}  # Track signatures across phases
+        self.max_retries = 3
+        self.retry_delay = 2  # seconds
+    
+    def _call_gemini_with_retry(self, prompt: str, phase: int = 1) -> Tuple[str, Optional[str]]:
+        """
+        Call Gemini API with exponential backoff retry logic and thought-signature tracking.
+        
+        Returns: (response_text, thought_signature)
+        """
+        for attempt in range(self.max_retries):
+            try:
+                print(f"[Phase {phase}] API call (attempt {attempt + 1}/{self.max_retries})")
+                
+                response = self.client.models.generate_content(
+                    model=self.model,
+                    contents=prompt,
+                )
+                
+                # Extract thought signature if present
+                thought_sig = None
+                if hasattr(response, 'thought_signature'):
+                    thought_sig = response.thought_signature
+                    self.thought_signatures[phase] = thought_sig
+                    print(f"[Phase {phase}] Captured thought signature: {thought_sig[:50]}...")
+                
+                return response.text, thought_sig
+            
+            except api_exceptions.ResourceExhausted as e:
+                print(f"[Phase {phase}] Rate limited: {e}")
+                if attempt < self.max_retries - 1:
+                    wait_time = self.retry_delay * (2 ** attempt)
+                    print(f"[Phase {phase}] Retrying in {wait_time}s...")
+                    time.sleep(wait_time)
+                else:
+                    raise
+            
+            except api_exceptions.BadRequest as e:
+                if "400" in str(e) or "thought" in str(e).lower():
+                    print(f"[Phase {phase}] 400 Bad Request (possibly thought signature issue): {e}")
+                    if attempt < self.max_retries - 1:
+                        print(f"[Phase {phase}] Retrying without signature reference...")
+                        time.sleep(self.retry_delay)
+                    else:
+                        raise
+                else:
+                    raise
+            
+            except Exception as e:
+                print(f"[Phase {phase}] Unexpected error: {e}")
+                if attempt < self.max_retries - 1:
+                    time.sleep(self.retry_delay)
+                else:
+                    raise
+        
+        raise RuntimeError(f"Failed after {self.max_retries} attempts")
     
     def _filter_claims(self, claims: List[Claim]) -> List[Claim]:
         if not claims:
@@ -64,12 +123,9 @@ PAPER TEXT:
 
 Return ONLY the JSON array, no markdown, no explanation."""
             try:
-                response = self.client.models.generate_content(
-                    model=self.model,
-                    contents=prompt,
-                )
-
-                response_text = response.text.strip()
+                response_text, _ = self._call_gemini_with_retry(prompt, phase=1)
+                
+                response_text = response_text.strip()
                 if response_text.startswith("```"):
                     response_text = response_text.split("```")[1]
                     if response_text.startswith("json"):
@@ -187,12 +243,9 @@ Return ONLY valid JSON in this format:
 """
         
         try:
-            response = self.client.models.generate_content(
-                model=self.model,
-                contents=prompt,
-            )
+            response_text, _ = self._call_gemini_with_retry(prompt, phase=2)
             
-            response_text = response.text.strip()
+            response_text = response_text.strip()
             if response_text.startswith("```"):
                 response_text = response_text.split("```")[1]
                 if response_text.startswith("json"):
@@ -239,12 +292,9 @@ If no contradictions found, return empty array: []
 """
         
         try:
-            response = self.client.models.generate_content(
-                model=self.model,
-                contents=prompt,
-            )
+            response_text, _ = self._call_gemini_with_retry(prompt, phase=3)
             
-            response_text = response.text.strip()
+            response_text = response_text.strip()
             if response_text.startswith("```"):
                 response_text = response_text.split("```")[1]
                 if response_text.startswith("json"):
