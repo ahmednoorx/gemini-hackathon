@@ -40,18 +40,18 @@
 
 ### [0:45–1:20] Results Display
 
-**Visual:** Show JSON results or results table
+**Visual:** Show JSON results or results table with detected contradiction highlighted
 
 **Script (35 sec):**
 > *[Wait for results to complete, or show pre-recorded results]*
 >
-> "Here are the detected contradictions. Look at this one: The text claims 'temperature increased by 20%', but Figure 3 actually shows an 8% decrease.
+> "Look at the detected contradiction here: The text claims 'temperature increased by 20%', but Figure 3 shows an 8% **decrease**.
 >
-> The system flagged this with **88% confidence** and even provided the exact reasoning. It didn't just give us a boolean—it gave us **explainable evidence**.
+> The system flagged this with **88% confidence** and provided exact reasoning. Not just a yes/no—it's **explainable**.
 >
-> This is production-grade architecture: Type-safe Pydantic schemas, async FastAPI handlers, and proper error handling for real-world use."
+> Why this matters: Most GenAI work is ChatGPT clones. This is an **AI auditor**—production-grade with Pydantic type safety, async FastAPI handlers, and multi-phase reasoning with Gemini 3's thinking signatures."
 
-**Why:** Shows concrete value. Emphasizes production quality + interpretability.
+**Why:** Shows concrete value + emphasizes YOU understand production architecture beyond prompting.
 
 ---
 
